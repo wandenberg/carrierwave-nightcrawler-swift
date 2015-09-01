@@ -4,18 +4,15 @@ module Carrierwave
       class Storage < CarrierWave::Storage::Abstract
         def initialize(uploader)
           super(uploader)
-
-          @swift_list = NightcrawlerSwift::List.new
-          @swift_upload = NightcrawlerSwift::Upload.new
         end
 
         def store!(file)
-          @swift_upload.execute @uploader.filename, ::File.new(file.file)
+          upload = NightcrawlerSwift::Upload.new
+          upload.execute @uploader.filename, ::File.new(file.file)
         end
 
         def retrieve!(identifier)
-          list = @swift_list.execute(prefix: identifier)
-          SwiftFile.new(list[0]) if (list.is_a?(Array) && (list.count > 0))
+          SwiftFile.new({"name" => identifier})
         end
 
         class SwiftFile
@@ -28,7 +25,7 @@ module Carrierwave
           end
 
           def url(options = {})
-            "#{NightcrawlerSwift.connection.public_url}/#{NightcrawlerSwift.options.bucket}/#{@attrs["name"]}"
+            "#{NightcrawlerSwift.connection.public_url}/#{NightcrawlerSwift.options.bucket}/#{path}"
           end
 
           def delete
